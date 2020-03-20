@@ -23,11 +23,12 @@ public abstract class TableModel<T> extends AbstractTableModel {
     }
 
     public void setData(Vector<T> data) {
+        this.currentPage = 1;
         this.data = data;
     }
 
     public int getPageSize() {
-        return pageSize;
+        return this.pageSize;
     }
 
     public int getCurrentPage() {
@@ -51,7 +52,8 @@ public abstract class TableModel<T> extends AbstractTableModel {
 
     @Override
     public int getRowCount() {
-        return pageSize;
+        int tmp = (currentPage - 1) * pageSize;
+        return Math.min(data.size() - tmp, pageSize);
     }
 
     @Override

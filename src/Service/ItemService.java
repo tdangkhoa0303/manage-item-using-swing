@@ -8,9 +8,9 @@ import java.util.Vector;
 public class ItemService {
     public Vector<Item> searchItemByName(String keyword) throws SQLException, ClassNotFoundException {
         Vector<Item> list = new Vector<>();
-        String query = "SELECT * FROM Items WHERE itemName LIKE '%?%'";
+        String query = "SELECT * FROM Items WHERE itemName LIKE ?";
         try (Connection c = DBConnection.openConnection(); PreparedStatement ps = c.prepareStatement(query)) {
-            ps.setString(1, keyword);
+            ps.setString(1, "%" + keyword + "%");
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 String code = rs.getString("itemCode");
@@ -18,7 +18,7 @@ public class ItemService {
                 String supCode = rs.getString("supCode");
                 String unit = rs.getString("unit");
                 int price = rs.getInt("price");
-                byte supplying = rs.getByte("supplying");
+                boolean supplying = rs.getByte("supplying") == 1;
                 list.add(new Item(code, name, supCode, unit, price, supplying));
             }
         }
@@ -37,23 +37,12 @@ public class ItemService {
                 String supCode = rs.getString("supCode");
                 String unit = rs.getString("unit");
                 int price = rs.getInt("price");
-                byte supplying = rs.getByte("supplying");
+                boolean supplying = rs.getByte("supplying") == 1;
                 list.add(new Item(code, name, supCode, unit, price, supplying));
             }
         }
 
         return list;
-    }
-
-    public Item getItemByCode(String code) throws Exception {
-        String query = "SELECT * FROM Items WHERE itemCode = ?";
-        try (Connection c = DBConnection.openConnection(); PreparedStatement ps = c.prepareStatement(query)) {
-            ps.setString(1, code);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next())
-                return new Item(rs.getString("itemCode"), rs.getString("itemName"), rs.getString("supCode"), rs.getString("unit"), rs.getInt("price"), rs.getByte("supplying"));
-        }
-        return null;
     }
 
     public int insertItem(Item item) throws Exception {
@@ -64,7 +53,7 @@ public class ItemService {
             ps.setString(3, item.getSupCode());
             ps.setString(4, item.getUnit());
             ps.setInt(5, item.getPrice());
-            ps.setByte(6, item.getSupplying());
+            ps.setBoolean(6, item.isSupplying());
             return ps.executeUpdate();
         }
     }
@@ -76,7 +65,7 @@ public class ItemService {
             ps.setString(2, item.getSupCode());
             ps.setString(3, item.getUnit());
             ps.setInt(4, item.getPrice());
-            ps.setByte(5, item.getSupplying());
+            ps.setBoolean(5, item.isSupplying());
             ps.setString(6, item.getCode());
             return ps.executeUpdate();
         }
@@ -88,14 +77,5 @@ public class ItemService {
             ps.setString(1, code);
             return ps.executeUpdate();
         }
-    }
-
-    public int getItemCount() throws Exception {
-        String query = "SELECT COUNT(itemCode) AS itemCount FROM Items";
-        try (Connection c = DBConnection.openConnection(); PreparedStatement ps = c.prepareStatement(query)) {
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt("itemCount");
-        }
-        return 0;
     }
 }

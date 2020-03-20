@@ -11,7 +11,7 @@ public class Manager extends JFrame {
 
     public static void main(String[] args) {
         Manager c = new Manager();
-        c.setSize(900, 350);
+        c.setSize(1000, 350);
         c.setDefaultCloseOperation(EXIT_ON_CLOSE);
         c.setTitle("Item Management");
         c.setResizable(false);

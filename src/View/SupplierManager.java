@@ -10,7 +10,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class SupplierManager extends JPanel {
-    TableModel<Supplier> SupplierTableModel;
+    TableModel<Supplier> supplierTableModel;
     SupplierService SupplierService = new SupplierService();
 
     boolean isNew = true;
@@ -28,54 +28,59 @@ public class SupplierManager extends JPanel {
     JTextField txtSupplierAddress;
     JCheckBox txtSupplierCollaborating;
     JTextField txtSupplierPage;
+    JLabel lbPage;
 
     public SupplierManager() {
         int[] indexes = {0, 1, 2, 3};
-        String[] headers = {"Code", "Name", "Address", "Collaborating"};
-        SupplierTableModel = new TableModel<>(headers, indexes) {
+        String[] headers = {"Code", "Name", "Address", "Colloborating"};
+        supplierTableModel = new TableModel<>(headers, indexes) {
             @Override
             public Object getValueAt(int rowIndex, int columnIndex) {
-                if (rowIndex < 0 || rowIndex >= this.pageSize || columnIndex < 0 || columnIndex >= headers.length)
+                if (rowIndex < 0 || rowIndex >= this.data.size() || columnIndex < 0 || columnIndex >= headers.length)
                     return null;
-                Supplier Supplier = data.get(rowIndex + (currentPage - 1) * pageSize);
+                int index = rowIndex + (currentPage - 1) * pageSize;
+                if (index >= data.size()) return null;
+                Supplier supplier = data.get(index);
                 switch (columnIndex) {
                     case 0:
-                        return Supplier.getCode();
+                        return supplier.getCode();
                     case 1:
-                        return Supplier.getName();
+                        return supplier.getName();
                     case 2:
-                        return Supplier.getAddress();
+                        return supplier.getAddress();
                     case 3:
-                        return Supplier.isCollaborating();
+                        return supplier.isCollaborating();
                 }
                 return null;
             }
         };
         try {
-            SupplierTableModel.setData(SupplierService.getAllSupplier());
+            supplierTableModel.setData(SupplierService.getAllSupplier());
         } catch (Exception e) {
             e.printStackTrace();
         }
         initComponent();
 
         btnSupplierNext.addActionListener(e -> {
-            SupplierTableModel.setCurrentPage(SupplierTableModel.getCurrentPage() + 1);
+            supplierTableModel.setCurrentPage(supplierTableModel.getCurrentPage() + 1);
+            txtSupplierPage.setText(" " + supplierTableModel.getCurrentPage() + "");
             tblSupplier.updateUI();
         });
 
         btnSupplierPrev.addActionListener(e -> {
-            SupplierTableModel.setCurrentPage(SupplierTableModel.getCurrentPage() - 1);
+            supplierTableModel.setCurrentPage(supplierTableModel.getCurrentPage() - 1);
+            txtSupplierPage.setText(" " + supplierTableModel.getCurrentPage() + "");
             tblSupplier.updateUI();
         });
 
         txtSupplierPage.addActionListener(e -> {
-            int page = SupplierTableModel.getCurrentPage();
+            int page = supplierTableModel.getCurrentPage();
             try {
                 page = Integer.parseInt(txtSupplierPage.getText().trim());
             } catch (Exception exception) {
                 JOptionPane.showMessageDialog(this, "Page number must be a positive number");
             }
-            SupplierTableModel.setCurrentPage(page);
+            supplierTableModel.setCurrentPage(page);
             tblSupplier.updateUI();
         });
 
@@ -84,14 +89,8 @@ public class SupplierManager extends JPanel {
             txtSupplierCode.requestFocus();
             txtSupplierName.setText("");
             txtSupplierAddress.setText("");
-
             txtSupplierCollaborating.setSelected(false);
             isNew = true;
-            try {
-                SupplierTableModel.setData(SupplierService.getAllSupplier());
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
         });
 
         btnSupplierRemove.addActionListener(e -> {
@@ -101,13 +100,14 @@ public class SupplierManager extends JPanel {
                 return;
             }
             if (JOptionPane.showConfirmDialog(this, "Are you sure to remove row " + (selectedRow + 1) + "?", "Remove Confirmation", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-                String code = (String) SupplierTableModel.getValueAt(selectedRow, indexes[0]);
+                String code = (String) supplierTableModel.getValueAt(selectedRow, indexes[0]);
+                supplierTableModel.getData().remove(selectedRow + (supplierTableModel.getCurrentPage() - 1) * supplierTableModel.getPageSize());
+                lbPage.setText("/ " + supplierTableModel.getPageCount());
                 try {
                     SupplierService.deleteSupplier(code);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
-                SupplierTableModel.getData().remove(selectedRow + (SupplierTableModel.getCurrentPage() - 1) * SupplierTableModel.getPageSize());
                 tblSupplier.updateUI();
             }
         });
@@ -130,7 +130,7 @@ public class SupplierManager extends JPanel {
             StringBuilder errors = new StringBuilder();
             String code = txtSupplierCode.getText().trim();
             if (isNew) {
-                for (Supplier supplier : SupplierTableModel.getData())
+                for (Supplier supplier : supplierTableModel.getData())
                     if (supplier.getCode().equals(code)) {
                         errors.append("The code [").append(code).append("] is existed.\n");
                         txtSupplierCode.requestFocus();
@@ -152,21 +152,22 @@ public class SupplierManager extends JPanel {
             }
             if (isNew) {
                 Supplier supplier = new Supplier(code, name, address, isCollaborating);
+                supplierTableModel.getData().add(supplier);
+                lbPage.setText("/ " + supplierTableModel.getPageCount());
                 try {
                     SupplierService.insertSupplier(supplier);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
-                SupplierTableModel.getData().add(supplier);
             } else {
                 int selectedRow = tblSupplier.getSelectedRow();
                 Supplier supplier = new Supplier(code, name, address, isCollaborating);
+                supplierTableModel.getData().set((selectedRow + (supplierTableModel.getCurrentPage() - 1) * 5), supplier);
                 try {
                     SupplierService.updateSupplier(supplier);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
-                SupplierTableModel.getData().set((selectedRow + (SupplierTableModel.getCurrentPage() - 1) * 5), supplier);
             }
             tblSupplier.updateUI();
         });
@@ -177,7 +178,7 @@ public class SupplierManager extends JPanel {
         GridBagConstraints gbc = new GridBagConstraints();
 
         // Table Area
-        tblSupplier = new JTable(SupplierTableModel);
+        tblSupplier = new JTable(supplierTableModel);
         tblSupplier.setPreferredScrollableViewportSize(new Dimension(500, 150));
         tblSupplier.setRowHeight(30);
         tblSupplier.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -190,7 +191,7 @@ public class SupplierManager extends JPanel {
         btnSupplierPrev = new JButton("Previous");
         txtSupplierPage = new JTextField(" 1");
         txtSupplierPage.setPreferredSize(new Dimension(30, 30));
-        JLabel lbPage = new JLabel("/ " + SupplierTableModel.getPageCount());
+        lbPage = new JLabel("/ " + supplierTableModel.getPageCount());
         tableNav.add(btnSupplierPrev);
         tableNav.add(txtSupplierPage);
         tableNav.add(lbPage);
@@ -222,13 +223,13 @@ public class SupplierManager extends JPanel {
         txtSupplierCode = new JTextField();
         txtSupplierName = new JTextField();
         txtSupplierAddress = new JTextField();
-        txtSupplierCollaborating = new JCheckBox("Collaborating", false);
+        txtSupplierCollaborating = new JCheckBox("Colloborating", false);
 
 
-        JLabel[] labels = {new JLabel("Code"), new JLabel("Name"), new JLabel("Address"), new JLabel("Collaborating")};
+        JLabel[] labels = {new JLabel("Code"), new JLabel("Name"), new JLabel("Address"), new JLabel("Colloborating")};
         JPanel right_panel = reusableComponent.inputComponent(labels, txtSupplierCode, txtSupplierName, txtSupplierAddress, txtSupplierCollaborating);
 
-        this.setLayout(new FlowLayout(FlowLayout.LEADING, 5, 5));
+        this.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         this.add(left_panel);
         this.add(right_panel);
         this.setBorder(new EmptyBorder(5, 5, 5, 5));

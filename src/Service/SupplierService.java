@@ -19,8 +19,8 @@ public class SupplierService {
                 String code = rs.getString("SupCode");
                 String name = rs.getString("SupName");
                 String address = rs.getString("Address");
-                boolean collaborating = rs.getBoolean("collaborating");
-                list.add(new Supplier(code, name, address, collaborating));
+                boolean colloborating = rs.getBoolean("colloborating");
+                list.add(new Supplier(code, name, address, colloborating));
             }
         }
 
@@ -47,14 +47,14 @@ public class SupplierService {
             ps.setString(1, code);
             ResultSet rs = ps.executeQuery();
             if (rs.next())
-                return new Supplier(rs.getString("supCode"), rs.getString("SupName"), rs.getString("Address"), rs.getBoolean("collaborating"));
+                return new Supplier(rs.getString("supCode"), rs.getString("SupName"), rs.getString("Address"), rs.getBoolean("colloborating"));
 
         }
         return null;
     }
 
     public int insertSupplier(Supplier supplier) throws Exception {
-        String query = "INSERT INTO Suppliers (SupCode, SupName, Address, collaborating) VALUES (?, ?, ?, ?)";
+        String query = "INSERT INTO Suppliers (SupCode, SupName, Address, colloborating) VALUES (?, ?, ?, ?)";
         try (Connection c = DBConnection.openConnection(); PreparedStatement ps = c.prepareStatement(query)) {
             ps.setString(1, supplier.getCode());
             ps.setString(2, supplier.getName());
@@ -65,7 +65,7 @@ public class SupplierService {
     }
 
     public int updateSupplier(Supplier supplier) throws Exception {
-        String query = "UPDATE Suppliers SET SupName = ?, Address = ?, collaborating = ? WHERE SupCode = ?";
+        String query = "UPDATE Suppliers SET SupName = ?, Address = ?, colloborating = ? WHERE SupCode = ?";
         try (Connection c = DBConnection.openConnection(); PreparedStatement ps = c.prepareStatement(query)) {
             ps.setString(1, supplier.getName());
             ps.setString(2, supplier.getAddress());
@@ -82,15 +82,4 @@ public class SupplierService {
             return ps.executeUpdate();
         }
     }
-
-    public int getSupplierCount() throws Exception {
-        String query = "SELECT COUNT(SupCode) AS supCount FROM Suppliers";
-        try (Connection c = DBConnection.openConnection(); PreparedStatement ps = c.prepareStatement(query)) {
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt("supCount");
-        }
-        return 0;
-    }
-
-
 }

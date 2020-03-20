@@ -11,6 +11,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.util.Objects;
+import java.util.Vector;
 
 public class ItemManager extends JPanel {
     TableModel<Item> itemTableModel;
@@ -18,6 +19,7 @@ public class ItemManager extends JPanel {
     SupplierService supplierService = new SupplierService();
 
     boolean isNew = true;
+    boolean isFind = false;
 
     JTable tblItem;
 
@@ -34,6 +36,7 @@ public class ItemManager extends JPanel {
     JTextField txtItemUnit;
     JTextField txtItemPrice;
     JCheckBox txtItemSupplying;
+    JLabel lbPage;
     JTextField txtItemPage;
 
     public ItemManager() {
@@ -44,7 +47,9 @@ public class ItemManager extends JPanel {
             public Object getValueAt(int rowIndex, int columnIndex) {
                 if (rowIndex < 0 || rowIndex >= this.pageSize || columnIndex < 0 || columnIndex >= headers.length)
                     return null;
-                Item item = data.get(rowIndex + (currentPage - 1) * pageSize);
+                int index = rowIndex + (currentPage - 1) * pageSize;
+                if (index >= data.size()) return null;
+                Item item = data.get(index);
                 switch (columnIndex) {
                     case 0:
                         return item.getCode();
@@ -71,11 +76,13 @@ public class ItemManager extends JPanel {
 
         btnItemNext.addActionListener(e -> {
             itemTableModel.setCurrentPage(itemTableModel.getCurrentPage() + 1);
+            txtItemPage.setText(" " + itemTableModel.getCurrentPage() + "");
             tblItem.updateUI();
         });
 
         btnItemPrev.addActionListener(e -> {
             itemTableModel.setCurrentPage(itemTableModel.getCurrentPage() - 1);
+            txtItemPage.setText(" " + itemTableModel.getCurrentPage() + "");
             tblItem.updateUI();
         });
 
@@ -93,11 +100,18 @@ public class ItemManager extends JPanel {
         btnItemFind.addActionListener(e -> {
             String keyword = txtItemName.getText().trim();
             try {
-                itemTableModel.setData(itemService.searchItemByName(keyword));
+                Vector<Item> result = itemService.searchItemByName(keyword);
+                if (result.size() > 0) {
+                    itemTableModel.setData(result);
+                    txtItemPage.setText(" 1");
+                    lbPage.setText("/ " + itemTableModel.getPageCount());
+
+                } else JOptionPane.showMessageDialog(this, "No item has been found!");
                 tblItem.updateUI();
             } catch (SQLException | ClassNotFoundException ex) {
                 ex.printStackTrace();
             }
+            isFind = true;
         });
 
         btnItemNew.addActionListener(e -> {
@@ -109,10 +123,12 @@ public class ItemManager extends JPanel {
             txtItemPrice.setText("");
             txtItemSupplying.setText("");
             isNew = true;
-            try {
-                itemTableModel.setData(itemService.getAllItem());
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            if (isFind) {
+                try {
+                    itemTableModel.setData(itemService.getAllItem());
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
         });
 
@@ -124,12 +140,15 @@ public class ItemManager extends JPanel {
             }
             if (JOptionPane.showConfirmDialog(this, "Are you sure to remove row " + (selectedRow + 1) + "?", "Remove Confirmation", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                 String code = (String) itemTableModel.getValueAt(selectedRow, indexes[0]);
+                itemTableModel.getData().remove(selectedRow + (itemTableModel.getCurrentPage() - 1) * itemTableModel.getPageSize());
                 try {
                     itemService.deleteItem(code);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
-                itemTableModel.getData().remove(selectedRow + (itemTableModel.getCurrentPage() - 1) * itemTableModel.getPageSize());
+                lbPage.setText("/ " + itemTableModel.getPageCount());
+                if (Integer.parseInt(txtItemPage.getText().trim()) > itemTableModel.getPageCount())
+                    txtItemPage.setText(" " + itemTableModel.getPageCount());
                 tblItem.updateUI();
             }
         });
@@ -162,7 +181,6 @@ public class ItemManager extends JPanel {
                         errors.append("The code [").append(code).append("] is existed.\n");
                         txtItemCode.requestFocus();
                     }
-
             }
             String name = txtItemName.getText().trim();
             if (!name.matches("[a-zA-Z0-9\\s]{3,30}")) {
@@ -186,21 +204,22 @@ public class ItemManager extends JPanel {
             }
             if (isNew) {
                 Item item = new Item(code, name, supCode, unit, price, isSupplying);
+                itemTableModel.getData().add(item);
+                lbPage.setText("/ " + itemTableModel.getPageCount());
                 try {
                     itemService.insertItem(item);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
-                itemTableModel.getData().add(item);
             } else {
                 int selectedRow = tblItem.getSelectedRow();
                 Item item = new Item(code, name, supCode, unit, price, isSupplying);
+                itemTableModel.getData().set((selectedRow + (itemTableModel.getCurrentPage() - 1) * 5), item);
                 try {
                     itemService.updateItem(item);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
-                itemTableModel.getData().set((selectedRow + (itemTableModel.getCurrentPage() - 1) * 5), item);
             }
             tblItem.updateUI();
         });
@@ -224,7 +243,7 @@ public class ItemManager extends JPanel {
         btnItemPrev = new JButton("Previous");
         txtItemPage = new JTextField(" 1");
         txtItemPage.setPreferredSize(new Dimension(30, 30));
-        JLabel lbPage = new JLabel("/ " + itemTableModel.getPageCount());
+        lbPage = new JLabel("/ " + itemTableModel.getPageCount());
         tableNav.add(btnItemPrev);
         tableNav.add(txtItemPage);
         tableNav.add(lbPage);
@@ -267,18 +286,17 @@ public class ItemManager extends JPanel {
         JPanel name_container = new JPanel(new GridBagLayout());
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.ipady = 8;
-        gbc.ipadx = 80;
+        gbc.ipady = 7;
         gbc.weightx = 100;
         name_container.add(txtItemName, gbc);
         gbc = new GridBagConstraints();
         gbc.ipady = 7;
         name_container.add(btnItemFind, gbc);
 
-        JLabel[] labels = {new JLabel("Code"), new JLabel("Name"), new JLabel("Supplier Code"), new JLabel("Unit"), new JLabel("Price")};
+        JLabel[] labels = {new JLabel("Code"), new JLabel("Name"), new JLabel("Supplier Code"), new JLabel("Unit"), new JLabel("Price"), new JLabel("Supplying")};
         JPanel right_panel = reusableComponent.inputComponent(labels, txtItemCode, name_container, txtItemSupCode, txtItemUnit, txtItemPrice, txtItemSupplying);
 
-        this.setLayout(new FlowLayout(FlowLayout.LEADING, 5, 5));
+        this.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         this.add(left_panel);
         this.add(right_panel);
         this.setBorder(new EmptyBorder(5, 5, 5, 5));
