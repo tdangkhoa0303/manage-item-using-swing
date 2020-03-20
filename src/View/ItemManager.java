@@ -231,7 +231,7 @@ public class ItemManager extends JPanel {
 
         // Table Area
         tblItem = new JTable(itemTableModel);
-        tblItem.setPreferredScrollableViewportSize(new Dimension(500, 150));
+        tblItem.setPreferredScrollableViewportSize(new Dimension(500, 140));
         tblItem.setRowHeight(30);
         tblItem.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         JScrollPane tablePanel = new JScrollPane(tblItem);
@@ -297,6 +297,8 @@ public class ItemManager extends JPanel {
         JPanel right_panel = reusableComponent.inputComponent(labels, txtItemCode, name_container, txtItemSupCode, txtItemUnit, txtItemPrice, txtItemSupplying);
 
         this.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        left_panel.setPreferredSize(new Dimension(550, 300));
+        right_panel.setPreferredSize(new Dimension(400, 300));
         this.add(left_panel);
         this.add(right_panel);
         this.setBorder(new EmptyBorder(5, 5, 5, 5));

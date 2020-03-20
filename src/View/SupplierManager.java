@@ -179,7 +179,7 @@ public class SupplierManager extends JPanel {
 
         // Table Area
         tblSupplier = new JTable(supplierTableModel);
-        tblSupplier.setPreferredScrollableViewportSize(new Dimension(500, 150));
+        tblSupplier.setPreferredScrollableViewportSize(new Dimension(500, 140));
         tblSupplier.setRowHeight(30);
         tblSupplier.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         JScrollPane tablePanel = new JScrollPane(tblSupplier);
@@ -230,6 +230,8 @@ public class SupplierManager extends JPanel {
         JPanel right_panel = reusableComponent.inputComponent(labels, txtSupplierCode, txtSupplierName, txtSupplierAddress, txtSupplierCollaborating);
 
         this.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        left_panel.setPreferredSize(new Dimension(550, 300));
+        right_panel.setPreferredSize(new Dimension(400, 200));
         this.add(left_panel);
         this.add(right_panel);
         this.setBorder(new EmptyBorder(5, 5, 5, 5));
