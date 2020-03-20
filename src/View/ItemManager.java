@@ -221,6 +221,10 @@ public class ItemManager extends JPanel {
         });
     }
 
+    protected void setSupCodeList(Vector<String> supCodeList) {
+        this.txtItemSupCode = new JComboBox<>(supCodeList);
+    }
+
     void initComponent() {
         JPanel left_panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();

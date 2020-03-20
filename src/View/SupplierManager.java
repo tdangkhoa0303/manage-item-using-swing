@@ -8,6 +8,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Vector;
 
 public class SupplierManager extends JPanel {
     TableModel<Supplier> supplierTableModel;
@@ -30,7 +31,7 @@ public class SupplierManager extends JPanel {
     JTextField txtSupplierPage;
     JLabel lbPage;
 
-    public SupplierManager() {
+    public SupplierManager(JComboBox<String> txtSupCode) {
         int[] indexes = {0, 1, 2, 3};
         String[] headers = {"Code", "Name", "Address", "Colloborating"};
         supplierTableModel = new TableModel<>(headers, indexes) {
@@ -103,6 +104,7 @@ public class SupplierManager extends JPanel {
                 String code = (String) supplierTableModel.getValueAt(selectedRow, indexes[0]);
                 supplierTableModel.getData().remove(selectedRow + (supplierTableModel.getCurrentPage() - 1) * supplierTableModel.getPageSize());
                 lbPage.setText("/ " + supplierTableModel.getPageCount());
+                txtSupCode.removeItem(code);
                 try {
                     SupplierService.deleteSupplier(code);
                 } catch (Exception ex) {
@@ -154,6 +156,7 @@ public class SupplierManager extends JPanel {
                 Supplier supplier = new Supplier(code, name, address, isCollaborating);
                 supplierTableModel.getData().add(supplier);
                 lbPage.setText("/ " + supplierTableModel.getPageCount());
+                txtSupCode.addItem(code);
                 try {
                     SupplierService.insertSupplier(supplier);
                 } catch (Exception ex) {
@@ -171,6 +174,14 @@ public class SupplierManager extends JPanel {
             }
             tblSupplier.updateUI();
         });
+    }
+
+    private Vector<String> getAllSupCode() {
+        Vector<String> list = new Vector<>();
+        for (Supplier supplier : supplierTableModel.getData()) {
+            list.add(supplier.getCode());
+        }
+        return list;
     }
 
     void initComponent() {

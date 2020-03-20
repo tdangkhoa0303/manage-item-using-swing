@@ -20,8 +20,10 @@ public class Manager extends JFrame {
 
     void initComponents() {
         JTabbedPane container = new JTabbedPane();
-        container.add("Item Manager", new ItemManager());
-        container.add("Supplier Manager", new SupplierManager());
+        ItemManager itemManager = new ItemManager();
+        SupplierManager supplierManager = new SupplierManager(itemManager.txtItemSupCode);
+        container.add("Item Manager", itemManager);
+        container.add("Supplier Manager", supplierManager);
         Container c = getContentPane();
         c.add(container);
     }
