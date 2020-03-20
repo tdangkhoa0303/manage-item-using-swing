@@ -183,10 +183,6 @@ public class ItemManager extends JPanel {
                     }
             }
             String name = txtItemName.getText().trim();
-            if (!name.matches("[a-zA-Z0-9\\s]{3,30}")) {
-                errors.append("Invalid name [digits & alpha characters only, min: 3, max: 30]\n");
-                txtItemName.requestFocus();
-            }
             String supCode = Objects.requireNonNull(txtItemSupCode.getSelectedItem()).toString();
             String unit = txtItemUnit.getText().trim();
             int price = 0;
