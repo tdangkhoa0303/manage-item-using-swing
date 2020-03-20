@@ -7,6 +7,10 @@ import Service.SupplierService;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.sql.SQLException;
+import java.util.Objects;
 
 public class ItemManager extends JPanel {
     TableModel<Item> itemTableModel;
@@ -29,7 +33,7 @@ public class ItemManager extends JPanel {
     JComboBox<String> txtItemSupCode;
     JTextField txtItemUnit;
     JTextField txtItemPrice;
-    JTextField txtItemSupplying;
+    JCheckBox txtItemSupplying;
     JTextField txtItemPage;
 
     public ItemManager() {
@@ -53,7 +57,7 @@ public class ItemManager extends JPanel {
                     case 4:
                         return item.getPrice();
                     case 5:
-                        return item.getSupplying();
+                        return item.isSupplying();
                 }
                 return null;
             }
@@ -87,7 +91,118 @@ public class ItemManager extends JPanel {
         });
 
         btnItemFind.addActionListener(e -> {
-            itemTableModel.setData(itemService.);
+            String keyword = txtItemName.getText().trim();
+            try {
+                itemTableModel.setData(itemService.searchItemByName(keyword));
+                tblItem.updateUI();
+            } catch (SQLException | ClassNotFoundException ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        btnItemNew.addActionListener(e -> {
+            txtItemCode.setText("");
+            txtItemCode.requestFocus();
+            txtItemName.setText("");
+            txtItemSupCode.setSelectedIndex(0);
+            txtItemUnit.setText("");
+            txtItemPrice.setText("");
+            txtItemSupplying.setText("");
+            isNew = true;
+            try {
+                itemTableModel.setData(itemService.getAllItem());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        btnItemRemove.addActionListener(e -> {
+            int selectedRow = tblItem.getSelectedRow();
+            if (selectedRow < 0) {
+                JOptionPane.showMessageDialog(this, "Please select a row to remove.");
+                return;
+            }
+            if (JOptionPane.showConfirmDialog(this, "Are you sure to remove row " + (selectedRow + 1) + "?", "Remove Confirmation", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                String code = (String) itemTableModel.getValueAt(selectedRow, indexes[0]);
+                try {
+                    itemService.deleteItem(code);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                itemTableModel.getData().remove(selectedRow + (itemTableModel.getCurrentPage() - 1) * itemTableModel.getPageSize());
+                tblItem.updateUI();
+            }
+        });
+
+        tblItem.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int selectedRow = tblItem.getSelectedRow();
+                txtItemCode.setText(tblItem.getValueAt(selectedRow, indexes[0]).toString());
+                txtItemName.setText(tblItem.getValueAt(selectedRow, indexes[1]).toString());
+                txtItemName.requestFocus();
+                txtItemSupCode.setSelectedItem(tblItem.getValueAt(selectedRow, indexes[2]));
+                txtItemUnit.setText(tblItem.getValueAt(selectedRow, indexes[3]).toString());
+                txtItemPrice.setText(tblItem.getValueAt(selectedRow, indexes[4]).toString());
+                txtItemSupplying.setSelected((Boolean) tblItem.getValueAt(selectedRow, indexes[5]));
+                txtItemCode.setEditable(false);
+                isNew = false;
+            }
+        });
+
+        btnItemSave.addActionListener(e -> {
+            StringBuilder errors = new StringBuilder();
+            String code = txtItemCode.getText().trim();
+            if (!code.matches("E\\d{4}")) {
+                errors.append("Invalid code [(E)xxxx] - x is digit\n");
+                txtItemCode.requestFocus();
+            } else if (isNew) {
+                for (Item item : itemTableModel.getData())
+                    if (item.getCode().equals(code)) {
+                        errors.append("The code [").append(code).append("] is existed.\n");
+                        txtItemCode.requestFocus();
+                    }
+
+            }
+            String name = txtItemName.getText().trim();
+            if (!name.matches("[a-zA-Z0-9\\s]{3,30}")) {
+                errors.append("Invalid name [digits & alpha characters only, min: 3, max: 30]\n");
+                txtItemName.requestFocus();
+            }
+            String supCode = Objects.requireNonNull(txtItemSupCode.getSelectedItem()).toString();
+            String unit = txtItemUnit.getText().trim();
+            int price = 0;
+            String priceString = txtItemPrice.getText().trim();
+            if (!priceString.matches("^[0-9]+$")) {
+                errors.append("Invalid price [price must be a positive number]\n");
+                txtItemPrice.requestFocus();
+            } else {
+                price = Integer.parseInt(priceString);
+            }
+            boolean isSupplying = txtItemSupplying.isSelected();
+            if (errors.length() > 0) {
+                JOptionPane.showMessageDialog(this, errors);
+                return;
+            }
+            if (isNew) {
+                Item item = new Item(code, name, supCode, unit, price, isSupplying);
+                try {
+                    itemService.insertItem(item);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                itemTableModel.getData().add(item);
+            } else {
+                int selectedRow = tblItem.getSelectedRow();
+                Item item = new Item(code, name, supCode, unit, price, isSupplying);
+                try {
+                    itemService.updateItem(item);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                itemTableModel.getData().set((selectedRow + (itemTableModel.getCurrentPage() - 1) * 5), item);
+            }
+            tblItem.updateUI();
         });
     }
 
@@ -148,7 +263,7 @@ public class ItemManager extends JPanel {
         }
         txtItemUnit = new JTextField();
         txtItemPrice = new JTextField();
-        txtItemSupplying = new JTextField();
+        txtItemSupplying = new JCheckBox("Supplying", false);
         JPanel name_container = new JPanel(new GridBagLayout());
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -160,7 +275,7 @@ public class ItemManager extends JPanel {
         gbc.ipady = 7;
         name_container.add(btnItemFind, gbc);
 
-        JLabel[] labels = {new JLabel("Code"), new JLabel("Name"), new JLabel("Supplier Code"), new JLabel("Unit"), new JLabel("Price"), new JLabel("Supplying")};
+        JLabel[] labels = {new JLabel("Code"), new JLabel("Name"), new JLabel("Supplier Code"), new JLabel("Unit"), new JLabel("Price")};
         JPanel right_panel = reusableComponent.inputComponent(labels, txtItemCode, name_container, txtItemSupCode, txtItemUnit, txtItemPrice, txtItemSupplying);
 
         this.setLayout(new FlowLayout(FlowLayout.LEADING, 5, 5));

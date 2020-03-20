@@ -3,13 +3,12 @@ package Entity;
 public class Item {
     private String code, name, supCode, unit;
     private int price;
-    private byte supplying;
+    private boolean supplying;
 
     public Item() {
     }
 
-
-    public Item(String code, String name, String supCode, String unit, int price, byte supplying) {
+    public Item(String code, String name, String supCode, String unit, int price, boolean supplying) {
         this.code = code;
         this.name = name;
         this.supCode = supCode;
@@ -58,11 +57,11 @@ public class Item {
         this.price = price;
     }
 
-    public byte getSupplying() {
+    public boolean isSupplying() {
         return supplying;
     }
 
-    public void setSupplying(byte supplying) {
+    public void setSupplying(boolean supplying) {
         this.supplying = supplying;
     }
 

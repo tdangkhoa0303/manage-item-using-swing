@@ -2,15 +2,27 @@ package Service;
 
 import Entity.Item;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Vector;
 
 public class ItemService {
-    public Vector<Item> searchItemByName(String keyword) {
-        Vector
+    public Vector<Item> searchItemByName(String keyword) throws SQLException, ClassNotFoundException {
+        Vector<Item> list = new Vector<>();
+        String query = "SELECT * FROM Items WHERE itemName LIKE '%?%'";
+        try (Connection c = DBConnection.openConnection(); PreparedStatement ps = c.prepareStatement(query)) {
+            ps.setString(1, keyword);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                String code = rs.getString("itemCode");
+                String name = rs.getString("itemName");
+                String supCode = rs.getString("supCode");
+                String unit = rs.getString("unit");
+                int price = rs.getInt("price");
+                byte supplying = rs.getByte("supplying");
+                list.add(new Item(code, name, supCode, unit, price, supplying));
+            }
+        }
+        return list;
     }
 
     public Vector<Item> getAllItem() throws Exception {
@@ -86,5 +98,4 @@ public class ItemService {
         }
         return 0;
     }
-
 }
