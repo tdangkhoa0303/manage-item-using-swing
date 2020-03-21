@@ -6,6 +6,7 @@ import Service.SupplierService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -32,12 +33,12 @@ public class ItemManager extends JPanel {
 
     JTextField txtItemCode;
     JTextField txtItemName;
-    JComboBox<String> txtItemSupCode;
+    JTextField txtItemPage;
     JTextField txtItemUnit;
     JTextField txtItemPrice;
     JCheckBox txtItemSupplying;
+    JComboBox<String> txtItemSupCode;
     JLabel lbPage;
-    JTextField txtItemPage;
 
     public ItemManager() {
         int[] indexes = {0, 1, 2, 3, 4, 5};
@@ -105,7 +106,7 @@ public class ItemManager extends JPanel {
                     itemTableModel.setData(result);
                     txtItemPage.setText(" 1");
                     lbPage.setText("/ " + itemTableModel.getPageCount());
-
+                    JOptionPane.showMessageDialog(this, "Your searching has been done. Click [New] to return the full list.");
                 } else JOptionPane.showMessageDialog(this, "No item has been found!");
                 tblItem.updateUI();
             } catch (SQLException | ClassNotFoundException ex) {
@@ -115,17 +116,13 @@ public class ItemManager extends JPanel {
         });
 
         btnItemNew.addActionListener(e -> {
-            txtItemCode.setText("");
-            txtItemCode.requestFocus();
-            txtItemName.setText("");
-            txtItemSupCode.setSelectedIndex(0);
-            txtItemUnit.setText("");
-            txtItemPrice.setText("");
-            txtItemSupplying.setText("");
-            isNew = true;
+            clearAllFields();
             if (isFind) {
                 try {
                     itemTableModel.setData(itemService.getAllItem());
+                    isFind = false;
+                    lbPage.setText(" " + itemTableModel.getPageCount());
+                    tblItem.updateUI();
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -147,8 +144,10 @@ public class ItemManager extends JPanel {
                     ex.printStackTrace();
                 }
                 lbPage.setText("/ " + itemTableModel.getPageCount());
-                if (Integer.parseInt(txtItemPage.getText().trim()) > itemTableModel.getPageCount())
+                if (Integer.parseInt(txtItemPage.getText().trim()) > itemTableModel.getPageCount()) {
                     txtItemPage.setText(" " + itemTableModel.getPageCount());
+                    itemTableModel.setCurrentPage(itemTableModel.getPageCount());
+                }
                 tblItem.updateUI();
             }
         });
@@ -217,12 +216,21 @@ public class ItemManager extends JPanel {
                     ex.printStackTrace();
                 }
             }
+            clearAllFields();
             tblItem.updateUI();
         });
     }
 
-    protected void setSupCodeList(Vector<String> supCodeList) {
-        this.txtItemSupCode = new JComboBox<>(supCodeList);
+    private void clearAllFields() {
+        txtItemCode.setText("");
+        txtItemCode.setEditable(true);
+        txtItemCode.requestFocus();
+        txtItemName.setText("");
+        txtItemSupCode.setSelectedIndex(0);
+        txtItemUnit.setText("");
+        txtItemPrice.setText("");
+        txtItemSupplying.setText("");
+        isNew = true;
     }
 
     void initComponent() {
@@ -298,7 +306,8 @@ public class ItemManager extends JPanel {
 
         this.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         left_panel.setPreferredSize(new Dimension(550, 300));
-        right_panel.setPreferredSize(new Dimension(400, 300));
+        right_panel.setBorder(new TitledBorder("Item Detail"));
+        right_panel.setPreferredSize(new Dimension(400, 320));
         this.add(left_panel);
         this.add(right_panel);
         this.setBorder(new EmptyBorder(5, 5, 5, 5));

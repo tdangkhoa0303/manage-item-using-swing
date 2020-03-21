@@ -5,10 +5,10 @@ import Service.SupplierService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Vector;
 
 public class SupplierManager extends JPanel {
     TableModel<Supplier> supplierTableModel;
@@ -24,11 +24,11 @@ public class SupplierManager extends JPanel {
     JButton btnSupplierPrev;
     JButton btnSupplierNext;
 
+    JTextField txtSupplierPage;
     JTextField txtSupplierCode;
     JTextField txtSupplierName;
     JTextField txtSupplierAddress;
     JCheckBox txtSupplierCollaborating;
-    JTextField txtSupplierPage;
     JLabel lbPage;
 
     public SupplierManager(JComboBox<String> txtSupCode) {
@@ -87,6 +87,7 @@ public class SupplierManager extends JPanel {
 
         btnSupplierNew.addActionListener(e -> {
             txtSupplierCode.setText("");
+            txtSupplierCode.setEditable(true);
             txtSupplierCode.requestFocus();
             txtSupplierName.setText("");
             txtSupplierAddress.setText("");
@@ -103,12 +104,16 @@ public class SupplierManager extends JPanel {
             if (JOptionPane.showConfirmDialog(this, "Are you sure to remove row " + (selectedRow + 1) + "?", "Remove Confirmation", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                 String code = (String) supplierTableModel.getValueAt(selectedRow, indexes[0]);
                 supplierTableModel.getData().remove(selectedRow + (supplierTableModel.getCurrentPage() - 1) * supplierTableModel.getPageSize());
-                lbPage.setText("/ " + supplierTableModel.getPageCount());
                 txtSupCode.removeItem(code);
                 try {
                     SupplierService.deleteSupplier(code);
                 } catch (Exception ex) {
                     ex.printStackTrace();
+                }
+                lbPage.setText("/ " + supplierTableModel.getPageCount());
+                if (Integer.parseInt(txtSupplierPage.getText().trim()) > supplierTableModel.getPageCount()) {
+                    txtSupplierPage.setText(" " + supplierTableModel.getPageCount());
+                    supplierTableModel.setCurrentPage(supplierTableModel.getPageCount());
                 }
                 tblSupplier.updateUI();
             }
@@ -172,16 +177,9 @@ public class SupplierManager extends JPanel {
                     ex.printStackTrace();
                 }
             }
+            btnSupplierNew.doClick();
             tblSupplier.updateUI();
         });
-    }
-
-    private Vector<String> getAllSupCode() {
-        Vector<String> list = new Vector<>();
-        for (Supplier supplier : supplierTableModel.getData()) {
-            list.add(supplier.getCode());
-        }
-        return list;
     }
 
     void initComponent() {
@@ -242,7 +240,8 @@ public class SupplierManager extends JPanel {
 
         this.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         left_panel.setPreferredSize(new Dimension(550, 300));
-        right_panel.setPreferredSize(new Dimension(400, 200));
+        right_panel.setBorder(new TitledBorder("Supplier Detail"));
+        right_panel.setPreferredSize(new Dimension(400, 320));
         this.add(left_panel);
         this.add(right_panel);
         this.setBorder(new EmptyBorder(5, 5, 5, 5));
